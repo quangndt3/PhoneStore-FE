@@ -8,10 +8,7 @@ import {
   ProductForm,
   ProductSchema,
 } from "../../../models";
-import ReactDOM from "react-dom/client";
-import { createRoot } from "react-dom/client";
 import axios from "axios";
-import { check } from "../../../components/check";
 import { getAllCategories } from "../../../api/categories";
 import { addProduct } from "../../../api/products";
 import { getAllProductColor } from "../../../api/product_color";
@@ -110,12 +107,12 @@ const AddProduct = () => {
         colors:[]
       }
       for(var j=0; j < inputColor.length; j++){
-        if(inputVersion[j].value === versions[i].value){
+        if(inputVersion[j].value == versions[i].value){
           const color={
             colorName:inputColor[j].value,
             price: price[j].value,
             quantity: quantity[j].value,
-            colorCode: "#" + inputColorCode[j].value
+            colorCode: inputColorCode[j].value
           
           }
           attribute.colors.push(color)
@@ -129,7 +126,7 @@ const AddProduct = () => {
 
 
     const images = [];
-    console.log(data);
+
     
     const testanh: NodeListOf<HTMLInputElement> =
       document.querySelectorAll(".img");
@@ -138,8 +135,12 @@ const AddProduct = () => {
     }
     data.images = images;
     data.attributes =arrayAttribute
+    console.log(data);
+    
     addProduct(data).then((res) => {
+      navigate("/admin/products")
       alert("Thêm sản phẩm thành công")
+
     })
     .catch(errors=>{
       console.log(errors);
@@ -179,6 +180,7 @@ const AddProduct = () => {
     const versions = document.querySelectorAll(
       ".version:checked"
     ) as NodeListOf<HTMLInputElement>;
+    
     const array = [];
     const containerAttribute = document.querySelector("#containerInputAttribute") as HTMLInputElement;
     containerAttribute.innerHTML=""
@@ -193,7 +195,7 @@ const AddProduct = () => {
         const inputColorCode = document.createElement("input");
         const price = document.createElement("input");
         const quanity = document.createElement("input");
-        inputVersion.value = version[i].version;
+        inputVersion.value = versions[i].value;
         inputColorCode.value = colors[j].dataset.id!
 
         
@@ -360,20 +362,20 @@ const AddProduct = () => {
                   </p>
                 </div>
 
-                <button type="button" onClick={addinput}>
-                  Ảnh
+                <button className="border-[2px] bg-blue-500 text-white px-[10px]" type="button" onClick={addinput}>
+                  Ảnh +
                 </button>
                 <div id="anh"></div>
-                <button type="button" onClick={addAttibute}>
-                  Đặc điểm
+                <button type="button" className="border-[2px] bg-blue-500 text-white px-[10px]" onClick={addAttibute}>
+                  Đặc điểm +
                 </button>
                 <div id="atributes"></div>
                 <p className="text-red-700 text-[10px]">
                   {errors.specifications && errors.specifications.message}
                 </p>
                 <br></br>
-                <button type="button" onClick={showAttibute}>
-                  Thuộc tính
+                <button type="button" className="border-[2px] bg-blue-500 text-white px-[10px]" onClick={showAttibute}>
+                  Thuộc tính +
                 </button>
                 <div id="containerInputAttribute" className="gird grid-cols-2 gap-4"></div>
                 <h1>Danh mục</h1>

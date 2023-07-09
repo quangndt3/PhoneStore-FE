@@ -70,7 +70,7 @@ const Product = (props:Props) => {
   
   const [itemOffset, setItemOffset] = useState(0);
 
-  const itemsPerPage=1
+  const itemsPerPage=5
   // Simulate fetching items from another resources.
   // (This could be items from props; or items loaded in a local state
   // from an API endpoint with useEffect and useState)
@@ -92,7 +92,7 @@ const Product = (props:Props) => {
       `User requested page number ${event.selected}, which is offset ${newOffset}`
     );
     setItemOffset(newOffset);
-    setSkip(newOffset)
+    setSkip(newOffset)  
   };
 
 

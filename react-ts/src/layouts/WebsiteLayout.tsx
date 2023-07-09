@@ -195,7 +195,7 @@ const WebsiteLayout = ({cartLength}:Iprops) => {
         </button>
             <a href="/cart" className="max-sm:hidden relative">
              
-              <div className="bg-white absolute min-w-[20px] h-[20px] rounded-[300px] bottom-[15px] right-[2px] text-red-500 leading-[20px] text-center font-bold">{cartLength}</div>
+              <div className="bg-white absolute min-w-[20px] h-[20px] rounded-[300px] bottom-[15px] right-[2px] text-red-500 leading-[20px] text-center font-bold">{cartLength?cartLength:"0"}</div>
               <svg className="w-[30px] h-[30px]  mt-4 " xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" fill="#FFFFFF" version="1.1" id="Capa_1" width="800px" height="800px" viewBox="0 0 902.86 902.86" xmlSpace="preserve">
 <g>
 	<g>

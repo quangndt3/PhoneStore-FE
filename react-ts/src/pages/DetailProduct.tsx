@@ -55,6 +55,9 @@ const DetailProduct = ({handleCartLenthg}:Iprops) => {
     comment.value = "";
   };
   const handleAddToCard = () => {
+    if (!user) {
+      return alert("Bạn phải đăng nhập để sử dụng chức năng này");
+    }
     const quantity = (document.querySelector("#quantity") as HTMLInputElement)
       .value;
     const priceProduct = document.querySelector(
@@ -211,18 +214,18 @@ const DetailProduct = ({handleCartLenthg}:Iprops) => {
                         Number(currentColor?.price!)
                     )}
                   </p>
+                  
                 </div>
-              </div>
-              <form action="">
+                <form action="">
                 <input
                   // onChange={checkQuantity}
                   id="quantity"
                   type="number"
                   defaultValue={1}
-                  className="rounded-md max-lg:my-[10px] max-lg:w-[100%] "
+                  className="rounded-md max-lg:my-[10px] max-lg:w-[100%] lg:mt-[10px]"
                 />
               </form>
-              <div className="flex gap-5 max-sm:w-[100%] max-lg:justify-between">
+              <div className="flex gap-5 max-sm:w-[100%] max-lg:justify-between lg:mt-[50px]">
                 <button
                   onClick={() => {
                     handleAddToCard();
@@ -275,6 +278,9 @@ const DetailProduct = ({handleCartLenthg}:Iprops) => {
                   </svg>
                 </button>
               </div>
+              </div>
+             
+          
             </div>
           </div>
           <div className="bg-[#F2F2F2] p-4 rounded-md mt-[80px] mb-4">

@@ -20,8 +20,8 @@ export default function ProductThumbs({images}:Props) {
     <>
       <Swiper
         style={{
-          '--swiper-navigation-color': '#fff',
-          '--swiper-pagination-color': '#fff',
+          '--swiper-navigation-color': '#3E3A38',
+          '--swiper-pagination-color': '#3E3A38',
         
         }}
         spaceBetween={10}

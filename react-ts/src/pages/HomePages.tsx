@@ -15,7 +15,7 @@ const HomePages = () => {
   const [skip, setSkip] = useState(0);
 
   useEffect(() => {
-    getAll(skip,1).then(({ data }) => {
+    getAll(skip,5 ).then(({ data }) => {
         
       setProducts(data);
 
