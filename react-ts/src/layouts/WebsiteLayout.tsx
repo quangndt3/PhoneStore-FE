@@ -1,10 +1,10 @@
-import React, { createContext, useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import React, {  useEffect, useState } from "react";
+import {  Outlet, useNavigate } from "react-router-dom";
 import { ICategory, IProduct, IUser } from "../models";
-import { getAllCategories } from "../api/categories";
 const dangxuat = ()=>{
   localStorage.removeItem("acc")
   localStorage.removeItem("user")
+  window.location.href="/"
 }
 const dashboard = (role:string) => {
   if(role=="admin"){

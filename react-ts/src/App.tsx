@@ -10,10 +10,10 @@ import Dashboar from './pages/admin/Dashboar'
 import AddProduct from './pages/admin/product/AddProduct'
 import UpdateProduct from './pages/admin/product/UpdateProduct'
 import AdminProduct from './pages/admin/product/AdminProduct'
-import LogIn from './pages/user/signup'
+import LogIn from './pages/user/login'
 import UserLayout from './layouts/UserLayout'
 import { signin, signup } from './api/users'
-import Signin from './pages/user/Signin'
+import Signin from './pages/user/Signup'
 import AdminCategory from './pages/admin/category/AdminCategory'
 import AddCategory from './pages/admin/category/AddCategory'
 import UpdateCategory from './pages/admin/category/UpdateCategory'
@@ -22,9 +22,9 @@ import { AdminDetailComment } from './pages/admin/comment/AdminDetailComment'
 import { Navigate } from 'react-router-dom';
 import Search from './pages/searchProduct'
 import { useEffect, useState } from 'react'
-import { number } from 'joi'
-import AdminProductColor from './pages/admin/productColor/adminProductColor'
+import AdminProductColor from './pages/admin/productColor/AdminProductColor'
 import AddProductColor from './pages/admin/productColor/AddProductColor'
+import Signup from './pages/user/Signup'
 function App() {
  const [cartLength,setCartLength] = useState<number>()
 
@@ -87,8 +87,8 @@ const handleCartLenthg=(value:number)=>{
 
         {/* user */}
         <Route path='/user' element={<UserLayout />}>
-          <Route path="login" element={<LogIn onSignup={signup} />} />
-          <Route path="signin" element={<Signin onSignin={signin} />} />
+          <Route path="login" element={<LogIn  />} />
+          <Route path="signup" element={<Signup />} />
 
         </Route>
       </Routes>
