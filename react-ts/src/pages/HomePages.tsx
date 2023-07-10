@@ -24,6 +24,8 @@ const HomePages = () => {
   useEffect(() => {
     alert("admin account: tk: quangdt3@gmail.com - mk: 123456")
   },[])
+  console.log('test');
+  
 const getSkip=(skipValue:number):void=>{
   setSkip(skipValue)
 }
