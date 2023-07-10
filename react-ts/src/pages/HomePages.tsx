@@ -1,11 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import Product from "../components/product";
 import Slide from "../components/slide";
 import { ICategory, IData, IProduct } from "../models";
-import { useLocation, useParams } from "react-router-dom";
 import { getAll } from "../api/products";
-import { getAllCategories, getOne } from "../api/categories";
-import { number } from "joi";
 
 
 export const skipContext = createContext(2)
@@ -24,19 +21,13 @@ const HomePages = () => {
 
 
   }, [skip]);
-  
+  useEffect(() => {
+    alert("admin account: tk: quangdt3@gmail.com - mk: 123456")
+  },[])
 const getSkip=(skipValue:number):void=>{
   setSkip(skipValue)
 }
 
-
-
-  // const filterProductsByCategory = (_id) => {
-  //   setCurrentCategory(_id);
-  //   getOne(_id).then(({ data }) => {
-  //     setProducts(data.products);
-  //   });
-  // };
   const handleToggleFilter = ()=>{
     const mobile_filter = document.querySelector(".mobile-filter")
     const overlay = document.querySelector(".overlay")
