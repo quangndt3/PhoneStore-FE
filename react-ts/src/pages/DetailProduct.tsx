@@ -1,98 +1,103 @@
-import React, { useContext, useEffect, useState } from "react";
-import { IProduct, IComment, IAddComment, IColor, IAttribute } from "../models";
-import { useNavigate, useParams } from "react-router-dom";
+import React, {  useEffect, useState } from "react";
+import { IProduct, IAddComment, IColor, IAttribute } from "../models";
+import {  useNavigate, useParams } from "react-router-dom";
 import formatprice from "../sub";
-import { getOne, remove } from "../api/products";
-import { addComment, removeComments } from "../api/comments";
+import { getOne, getRelatedProduct } from "../api/products";
 import ProductThumbs from "../components/productThumbs";
-import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { number } from "joi";
+import notify from "../components/notify";
 interface Iprops{
   handleCartLenthg(value:number):void
 }
 const DetailProduct = ({handleCartLenthg}:Iprops) => {
+ 
   const [product, setProduct] = useState<IProduct>();
   const [color, setColor] = useState<IAttribute[]>();
   const [currentVersion, setCurrentVersion] = useState<IAttribute>();
   const [currentColor, setCurrentColor] = useState<IColor>();
+  const [relatedProduct,setRelatedProduct] =  useState<IProduct[]>()
+  const navigate = useNavigate()
+  const onNavigate = (id:string) => {
+    navigate(`/products/${id}`)
+  }
   const { id } = useParams();
   useEffect(() => {
     window.scrollTo(0, 0);
     getOne(id!).then(({ data }) => {
-      console.log(data);
 
       setColor(data.attributes);
       setProduct(data);
+      data.attributes[0].index=0
       setCurrentVersion(data.attributes[0]);
+      data.attributes[0].colors[0].index=0
       setCurrentColor(data.attributes[0].colors[0]);
+      getRelatedProduct(data?.categoryId._id!).then(({ data }) => {
+            setRelatedProduct(data.data)
+                })
     });
-  }, []);
 
+  }, []);
   useEffect(() => {
     setCurrentVersion(currentVersion);
     setCurrentColor(currentVersion!?.colors[0]);
   }, [currentVersion]);
   var user = JSON.parse(localStorage.getItem("acc")!);
-  const handleAddComment = () => {
-    if (!user) {
-      return alert("Bạn phải đăng nhập để sử dụng chức năng này");
-    }
-    const comment = document.querySelector("#comment") as HTMLTextAreaElement;
-
-    const Arr: IAddComment = {
-      content: comment.value,
-      userId: user._id,
-      productId: product!._id,
-    };
-    addComment(Arr).then(() => {
-      notify("Bình luận thành công");
-      getOne(id!).then(({ data }) => {
-        setProduct(data);
-      });
-    });
-
-    comment.value = "";
-  };
+  console.log(relatedProduct);
+  
   const handleAddToCard = () => {
+
     if (!user) {
       return alert("Bạn phải đăng nhập để sử dụng chức năng này");
     }
-    const quantity = (document.querySelector("#quantity") as HTMLInputElement)
-      .value;
-    const priceProduct = document.querySelector(
-      "#priceProduct"
-    ) as HTMLInputElement;
-    let arr = [];
-
-    if (localStorage.getItem(user._id)) {
-      arr = JSON.parse(localStorage.getItem(user._id)!);
+  if(Number(currentColor?.quantity)!<1){
+        notify("error", "Sản phẩm tạm thời hết hàng")
+       return false
+      }
+      else{
+        const priceProduct = document.querySelector(
+          "#priceProduct"
+        ) as HTMLInputElement;
+        let arr = [];
+    
+        if (localStorage.getItem(user.email)) {
+          arr = JSON.parse(localStorage.getItem(user.email)!);
+        }
+    
+        const index = arr.find((item: IProduct) => item._id == product!._id && item.version==currentVersion?.version_id.version && item.colorName == currentColor?.color_id.color);
+        
+        if (index) {
+         if(currentColor?.quantity! >index.quantity ){
+          index.quantity = Number(index.quantity) + 1;
+         }
+         else{
+          notify("error","Sản phẩm tạm thời hết hàng")
+          return false
+         }
+        } else {
+            arr.push({
+              _id: product?._id,
+              name: product?.name,
+              images: product?.images,
+              price: priceProduct.value,
+              version: currentVersion?.version_id.version,
+              colorName: currentColor?.color_id.color,
+              quantity: 1,
+              colorIndex: currentColor?.index,
+              versionIndex: currentVersion?.index,
+              maxQuantity: currentColor?.quantity,
+            });
+      }
+  
+      localStorage.setItem(user.email, JSON.stringify(arr));
+      const temp = JSON.parse(localStorage.getItem(`${user.email}`)!);
+      notify("success","Sản phẩm đã được thêm vào giỏ hàng");
+      handleCartLenthg(temp.length)
     }
 
-    const index = arr.find((item: IProduct) => item._id == product!._id);
+    
+    
 
-    if (
-      index &&
-      index.colorName === currentColor?.colorName &&
-      index.version === currentVersion?.version
-    ) {
-      index.quantity = Number(index.quantity) + Number(quantity);
-    } else {
-      arr.push({
-        _id: product?._id,
-        name: product?.name,
-        images: product?.images,
-        price: priceProduct.value,
-        version: currentVersion!.version,
-        colorName: currentColor!.colorName,
-        quantity: quantity,
-      });
-    }
-
-    localStorage.setItem(user._id, JSON.stringify(arr));
-    const temp = JSON.parse(localStorage.getItem(`${user._id}`)!);
-    notify("Sản phẩm đã được thêm vào giỏ hàng");
-    handleCartLenthg(temp.length)
+  
   };
   const changeCurrentColor = (color: IColor, index: number) => {
     const btn_color = document.querySelectorAll(".color");
@@ -102,6 +107,7 @@ const DetailProduct = ({handleCartLenthg}:Iprops) => {
     }
     btn_color[index].className =
       "border-2 border-blue-500 color rounded-[35px] w-[35px] h-[35px] p-[3px]";
+      color.index = index
     setCurrentColor(color);
   };
   const changeCurrentVersion = (version: IAttribute, index: number) => {
@@ -112,51 +118,28 @@ const DetailProduct = ({handleCartLenthg}:Iprops) => {
     }
     btn_version[index].className =
       " version border-[2px]  rounded-md w-[65px] border-blue-500 text-[#86868F] px-[10px] py-[7px] ";
+      version.index = index
     setCurrentVersion(version);
   };
 
-  // const desc = () => {
-  //   return product?.description;
-  // };
-  const handleRemoveComment = (idComment: string) => {
-    removeComments(idComment).then(() => {
-      getOne(id!).then(({ data }) => {
-        setProduct(data);
-      });
-    });
-  };
-  const notify = (content:string) =>
-    toast.success(`${content}`, {
-      position: "top-right",
-      autoClose: 5000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "light",
-    });
 
-  // const checkQuantity = () => {
-  //   const quantity = document.querySelector("#quantity") as HTMLInputElement;
-  //   if (Number(quantity.value) <= 0) {
-  //     alert("Số lượng sản phẩm phải lớn hơn 0");
-  //     quantity.value = "1";
+
+
   let discount = 100 - product!?.discount;
   discount = Number("0" + "." + discount);
   return (
     <>
-      <div className="mt-[145px] max-md:mt-[80px] max-w-[1400px] m-auto">
+      <div className="mt-[115px] max-md:mt-[80px] max-w-[1400px] m-auto">
         <div className="pt-4 xl:px-[150px] max-xl:px-[10px] md:px[4px]   max-lg:px-[20px]  ">
           <div className="grid xl:grid-cols-4 max-lg:gap-10 max-md:gap-10 lg:grid-cols-4 lg:gap-7 md:grid-cols-2  max-lg:grid-cols-1 max-md:grid-cols-1 ">
             <div className="product  col-span-2  ">
 
-              <ProductThumbs images={product?.images} />
+            <ProductThumbs images={product?.images} />
             </div>
 
             <div className=" xl:col-span-2 lg:col-span-2 flex flex-col justify-between">
               <div>
-                <h1 className="mb-4 font-bold text-[19px]">{product?.name}</h1>
+                <h1 className="mb-4 font-bold text-[19px]">{product?.name} {currentVersion?.version_id.version} {currentColor?.color_id.color}</h1>
                 <div className="flex gap-4">
                   <span className="my-auto text-[#667080] font-bold ">
                     Dung lượng:
@@ -167,9 +150,9 @@ const DetailProduct = ({handleCartLenthg}:Iprops) => {
                         onClick={() => {
                           changeCurrentVersion(item, index);
                         }}
-                        className=" first-of-type:border-blue-500 version border-[1px]  rounded-md w-[65px] text-[#86868F] px-[10px] py-[7px]"
+                        className=" first-of-type:border-blue-500 cursor-pointer version border-[1px]  rounded-md w-[65px] text-[#86868F] px-[10px] py-[7px]"
                       >
-                        {item.version}
+                        {item.version_id.version}
                       </button>
                     );
                   })}
@@ -180,51 +163,46 @@ const DetailProduct = ({handleCartLenthg}:Iprops) => {
                     Màu:
                   </span>
                   {color?.map((item) => {
-                    if (item.version === currentVersion!.version) {
+                    if (item.version_id.version === currentVersion!.version_id.version) {
                       return item.colors.map((color, index) => {
-                        return (
-                          <>
-                            <div className="first-of-type:border-2 border-blue-500 color rounded-[45px] w-[35px] h-[35px] p-[3px] ">
-                              <button
-                                onClick={() => {
-                                  changeCurrentColor(color, index);
-                                }}
-                                style={{ backgroundColor: color.colorCode }}
-                                className="h-full w-full rounded-[45px]"
-                              ></button>
-                            </div>
-                          </>
-                        );
+                        if(Number(color.quantity)>0){
+                          return (
+                            <>
+                              <div className="first-of-type:border-2 cursor-pointer border-blue-500 color rounded-[45px] w-[35px] h-[35px] p-[3px] ">
+                                <button
+                                  onClick={() => {
+                                    changeCurrentColor(color, index);
+                                  }}
+                                  style={{ backgroundColor: color.color_id.colorCode }}
+                                  className="h-full w-full rounded-[45px]"
+                                ></button>
+                              </div>
+                            </>
+                          );
+                        }
                       });
                     }
                   })}
+                  <span className="my-auto text-[#667080] font-bold ">
+                    Số lượng:
+                  </span>
+                  <span className="my-auto text-[#667080] font-bold ">
+                    {currentColor?.quantity}
+                  </span>
                 </div>
                 <div className="flex ">
                   <input
                     type="hidden"
                     id="priceProduct"
-                    value={
-                      product?.original_price! * discount +
-                      Number(currentColor?.price!)
-                    }
+                    value={product?.discount!>0?Math.ceil((product?.original_price!+ Number(currentColor?.price!)) * discount) :product?.original_price!+Number(currentColor?.price!)}
                   />
                   <p className="text-[24px] text-red-500 font-bold">
-                    {formatprice(
-                      product?.original_price! * discount +
-                        Number(currentColor?.price!)
-                    )}
+                    
+   {product?.discount!>0?formatprice(Math.ceil((product?.original_price!+ Number(currentColor?.price!)) * discount)):formatprice(product?.original_price!+Number(currentColor?.price!))}
                   </p>
                   
                 </div>
-                <form action="">
-                <input
-                  // onChange={checkQuantity}
-                  id="quantity"
-                  type="number"
-                  defaultValue={1}
-                  className="rounded-md max-lg:my-[10px] max-lg:w-[100%] lg:mt-[10px]"
-                />
-              </form>
+               
               <div className="flex gap-5 max-sm:w-[100%] max-lg:justify-between lg:mt-[50px]">
                 <button
                   onClick={() => {
@@ -234,19 +212,7 @@ const DetailProduct = ({handleCartLenthg}:Iprops) => {
                 >
                   Mua ngay
                 </button>
-                <ToastContainer
-                  position="top-right"
-                  autoClose={5000}
-                  limit={3}
-                  hideProgressBar={false}
-                  newestOnTop={false}
-                  closeOnClick
-                  rtl={false}
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                  theme="light"
-                />
+               
                 <button
                   className="border-2 border-red-500 min-w-[60px] text-center rounded-md h-[59px] "
                   onClick={() => {
@@ -287,7 +253,7 @@ const DetailProduct = ({handleCartLenthg}:Iprops) => {
             <h2 className="text-red-500 text-center font-medium mb-4">
               ĐẶC ĐIỂM NỔI BẬT
             </h2>
-            <ul>
+            <ul className="list-disc pl-[10px]">
               {product?.specifications.map((item) => {
                 return (
                   <li className="text-[14px] leading-8"> {item?.value}</li>
@@ -296,119 +262,44 @@ const DetailProduct = ({handleCartLenthg}:Iprops) => {
             </ul>
           </div>
           <div>
-            {/* <p dangerouslySetInnerHTML={{ __html: desc()! }}></p> */}
+            <h1 className="font-bold text-[21px] my-[5px]">Mô tả</h1>
+              {product?.description}
           </div>
-        </div>
-        <section className="bg-white dark:bg-gray-900 py-8 lg:py-16">
-          <div className="max-w-2xl lg:pl-[130px] md:pl-[30px]  px-4">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg lg:text-2xl font-bold text-gray-900 dark:text-white">
-                Bình luận ({product?.comments.length})
-              </h2>
-            </div>
-            <form className="mb-6">
-              <div className="py-2 px-4 mb-4 bg-white rounded-lg rounded-t-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                <label className="sr-only">Your comment</label>
-                <textarea
-                  id="comment"
-                  rows={6}
-                  className="px-0 w-full text-sm text-gray-900 border-0 focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400 dark:bg-gray-800"
-                  placeholder="Viết một bình luận..."
-                  required
-                ></textarea>
+          <h1 className="font-bold text-[21px] mt-[15px]">Sản phẩm liên quan</h1>
+          <div className="pt-[30px] grid xl:grid-cols-4 lg:grid-cols-4 max-lg:grid-cols-3  gap-5   max-sm:gap-2 max-w-[1200px] lg:m-auto  max-sm:grid-cols-2 max-sm:px-[10px] max-xl:px-[20px] 2xl:grid-cols-5 pl-[10px]">
+        { relatedProduct?.map((item:IProduct) => {
+          let discount = 100 - item.discount
+          discount = Number("0"+ "." + discount)
+
+          
+          return<>
+           <a  className="p-[20px] max-sm:p-[10px] relative border rounded-xl cursor-pointer  shadow-md hover:shadow-xl" href={"/products/"+item._id}>
+               {item.discount>0&& <div className="p-[5px] font-medium absolute top-[10px] left-[-5px]  text-white bg-red-500 leading-4  text-[14px] rounded-r-[3px]">
+              Giảm {item.discount}%
+              <div className="after:content-[''] filter: brightness-[60%] border-t-[7px] border-t-[#E01020]  border-l-[7px] border-l-transparent absolute left-[0px] bottom-[-6px]">
+
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  handleAddComment();
-                }}
-                className="inline-flex items-center py-2.5 px-4 text-xs font-medium text-center bg-blue-600 text-white bg-primary-700 rounded-lg focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-900 hover:bg-primary-800"
-              >
-                Gửi bình luận
-              </button>
-            </form>
-            {product?.comments.map((item) => {
-              if (user && user.role === "admin") {
-                return (
-                  <article className="xoa p-6 mb-6 text-base border-t border-gray-200 bg-white rounded-lg dark:bg-gray-900">
-                    <footer className="flex justify-between items-center mb-2">
-                      <div className="flex items-center">
-                        <p className="inline-flex items-center mr-3 text-sm text-gray-900 dark:text-white">
-                          <img
-                            className="mr-2 w-[60px] h-[60px] rounded-full"
-                            src={item.userId.images}
-                            alt="Michael Gough"
-                          />
-                          {item.userId.name}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 max-sm:hidden">
-                          {item.createdAt}
-                        </p>
-                      </div>
-                      <button
-                        id="dropdownComment1Button"
-                        data-dropdown-toggle="dropdownComment1"
-                        className="btn_remove inline-flex items-center p-2 text-sm font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50 dark:bg-gray-900 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
-                        type="button"
-                        data-id={item._id}
-                        onClick={() => {
-                          handleRemoveComment(item._id!);
-                        }}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          xmlnsXlink="http://www.w3.org/1999/xlink"
-                          fill="#000000"
-                          version="1.1"
-                          id="Capa_1"
-                          width="20px"
-                          height="20px"
-                          viewBox="0 0 482.428 482.429"
-                          xmlSpace="preserve"
-                        >
-                          <g>
-                            <g>
-                              <path d="M381.163,57.799h-75.094C302.323,25.316,274.686,0,241.214,0c-33.471,0-61.104,25.315-64.85,57.799h-75.098    c-30.39,0-55.111,24.728-55.111,55.117v2.828c0,23.223,14.46,43.1,34.83,51.199v260.369c0,30.39,24.724,55.117,55.112,55.117    h210.236c30.389,0,55.111-24.729,55.111-55.117V166.944c20.369-8.1,34.83-27.977,34.83-51.199v-2.828    C436.274,82.527,411.551,57.799,381.163,57.799z M241.214,26.139c19.037,0,34.927,13.645,38.443,31.66h-76.879    C206.293,39.783,222.184,26.139,241.214,26.139z M375.305,427.312c0,15.978-13,28.979-28.973,28.979H136.096    c-15.973,0-28.973-13.002-28.973-28.979V170.861h268.182V427.312z M410.135,115.744c0,15.978-13,28.979-28.973,28.979H101.266    c-15.973,0-28.973-13.001-28.973-28.979v-2.828c0-15.978,13-28.979,28.973-28.979h279.897c15.973,0,28.973,13.001,28.973,28.979    V115.744z" />
-                              <path d="M171.144,422.863c7.218,0,13.069-5.853,13.069-13.068V262.641c0-7.216-5.852-13.07-13.069-13.07    c-7.217,0-13.069,5.854-13.069,13.07v147.154C158.074,417.012,163.926,422.863,171.144,422.863z" />
-                              <path d="M241.214,422.863c7.218,0,13.07-5.853,13.07-13.068V262.641c0-7.216-5.854-13.07-13.07-13.07    c-7.217,0-13.069,5.854-13.069,13.07v147.154C228.145,417.012,233.996,422.863,241.214,422.863z" />
-                              <path d="M311.284,422.863c7.217,0,13.068-5.853,13.068-13.068V262.641c0-7.216-5.852-13.07-13.068-13.07    c-7.219,0-13.07,5.854-13.07,13.07v147.154C298.213,417.012,304.067,422.863,311.284,422.863z" />
-                            </g>
-                          </g>
-                        </svg>
-                        <span className="sr-only">Comment settings</span>
-                      </button>
-                    </footer>
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {item.content}
-                    </p>
-                  </article>
-                );
-              }
-              return (
-                <article className="xoa p-6 mb-6 text-base border-t border-gray-200 bg-white rounded-lg dark:bg-gray-900">
-                  <footer className="flex justify-between items-center mb-2">
-                    <div className="flex items-center">
-                      <p className="inline-flex items-center mr-3 text-sm text-gray-900 dark:text-white">
-                        <img
-                          className="mr-2 w-[60px] h-[60px] rounded-full"
-                          src={item.userId.images}
-                          alt="Michael Gough"
-                        />
-                        {item.userId.name}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 max-sm:hidden">
-                        {item.createdAt.split("T")}
-                      </p>
-                    </div>
-                  </footer>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    {item.content}
-                  </p>
-                </article>
-              );
-            })}
+            </div>}
+          <img
+            alt="Art"
+            src={item.images?.[0]}
+            className=""
+          />
+      
+          <h4 className="text-[14px] font-bold max-lg:text-[12px]">{item.name} {item.attributes[0].version_id.version}</h4>
+          <div className="flex justify-between max-lg:flex-wrap" >
+            {item.discount>0?<p className="font-bold text-red-500 text-[16px] max-sm:text-[13px]">{formatprice(Math.ceil((item.original_price+Number(item.attributes[0].colors[0].price))*discount))}</p>:<p className="font-bold text-red-500 text-[16px] max-sm:text-[13px]">{formatprice(item.original_price+Number(item.attributes[0].colors[0].price))}</p>}
+            {item.discount>0&&<p className="text-[12px] leading-7 text-[#707070] max-sm:text-[11px] line-through">{formatprice(item.original_price + Number(item.attributes[0].colors[0].price))}</p>}
           </div>
-        </section>
+    
+        </a>
+          </>
+        })} 
+
+        </div>
+        </div>
+     
+ 
       </div>
     </>
   );

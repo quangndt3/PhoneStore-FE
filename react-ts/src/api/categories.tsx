@@ -5,38 +5,45 @@ import { IAddCategory, ICategory, token } from "../models";
 
 
 const  user:token = JSON.parse(localStorage.getItem("user")!)
-export const getAllCategories = () => {
-    return instance.get("/categories");
+export const getAllCategories = async () => {
+    const res =  await instance.get("/categories");
+    
+    return res.data
 }
 
 export const getOne = (id:string) => {
     return instance.get("/categories/" + id);
 }
 
-export const RemoveCategories = (id:string) => {
+export const RemoveCategories = async (id:string) => {
     
-    return instance.delete("/categories/"+ id,{
+    const res = await instance.delete("/categories/"+ id,{
         headers:{
             authorization: `Bearer ${user.accessToken}`
         }
+      
     });
+    return res.data
 }
 
-export const addCategory = (newCategory:IAddCategory) => {
+export const addCategory = async (newCategory:IAddCategory) => {
     
-    return instance.post("/categories",newCategory,{
+    const res = await  instance.post("/categories",newCategory,{
         headers:{
             authorization: `Bearer ${user.accessToken}`
         }
     });
+    return res.data
 }
 
 
-export const updateCategory = (newCategory:ICategory) => {
+export const updateCategory = async (newCategory:ICategory) => {
+    console.log(newCategory);
     
-    return instance.patch("/categories/"+ newCategory._id,  newCategory,{
+    const res = await instance.patch("/categories/"+ newCategory._id,  newCategory,{
         headers:{
             authorization: `Bearer ${user.accessToken}`
         }
     });
+    return res.data
 }

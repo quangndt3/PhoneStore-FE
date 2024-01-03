@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { IUser } from '../../models'
 import { signin, signup } from '../../api/users'
+import notify from '../../components/notify'
 
 
 const LogIn = () => {
@@ -24,7 +25,7 @@ const LogIn = () => {
     e.preventDefault();
     
     signin(valueInput).then(({data}:any)=>{
-      alert("Thành công")
+      notify("success","Đăng nhập thành công")
       localStorage.setItem("user",JSON.stringify(data))  
       localStorage.setItem("acc", JSON.stringify(data.data) )
       navigate('/');
@@ -115,7 +116,7 @@ const LogIn = () => {
     <div className="flex items-center justify-between">
       <p className="text-sm text-gray-500">
         No account?
-        <a className="underline" href="signin">Signin</a>
+        <a className="underline" href="signup">Signup</a>
       </p>
 
       <button

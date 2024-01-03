@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="">
+        <input type="date" id="date" >
+        <input type="date" id="date2" >
+        <button type="button" onclick="test()" >ấdfadsf</button>
+    </form>
+</body>
+<script>
+    const test = ()=>{
+        const quang = document.querySelector("#date")
+        const quang2 = document.querySelector("#date2")
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        let mm = today.getMonth() + 1; // Months start at 0!
+        let dd = today.getDate();
+
+        if (dd < 10) dd = '0' + dd;
+        if (mm < 10) mm = '0' + mm;
+
+        const formattedToday = dd + '/' + mm + '/' + yyyy;
+    if(formattedToday < quang.value){
+        alert("Sai rồi")
+    }
+    }
+</script>
+</html>

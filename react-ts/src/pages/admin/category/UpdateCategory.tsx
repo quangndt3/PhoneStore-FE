@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate} from 'react-router-dom'
 import { check } from '../../../components/check'
 import { getOne, updateCategory } from '../../../api/categories'
+import notify from '../../../components/notify'
+import { useDispatch, useSelector } from 'react-redux'
+import { AppDispatch, RootState } from '../../../storage'
+import { updateCategories } from '../../slice/categori.slice'
 // import { updateProduct} from '../../api/product'
 interface category {
     _id:string,
@@ -29,25 +33,39 @@ const UpdateCategory= () => {
     const onHandleChange = (e:any) => {
         const name = e.target.name
         const value = e.target.value
+      console.log(name);
       
-        setInputValue({ ...inputValue, [name]: value })
-     
-        
-        
+        setInputValue({ ...inputValue, name: value })   
     }
-    const onHandleSubmit = (e:any) => {
+    const { categories, isLoading } = useSelector((state: RootState) => state.categories)
+    const dispatch = useDispatch<AppDispatch>()
+    const onHandleSubmit = async (e:any) => {
             e.preventDefault()
             const updateData:category= {...cate!, ...inputValue!}
+            const cateName = document.querySelector("#cateName") as HTMLInputElement
+            if(cateName.value !== ""){
 
-            updateCategory(updateData).then(()=>{
-                alert("Cập nhật category thành công")
-                navigate('/admin/categories');
-            }).catch(err=>{
-                alert(err.response.data.message)
-        
-            })
-      
-    }   
+
+                try {
+                    await dispatch(updateCategories(updateData!)).unwrap()
+                    navigate('/admin/categories')
+                    notify("success","Cập nhật danh mục thành công")
+
+                } catch (err:any) {
+                    console.log(err)
+                }
+                
+            }
+            else{
+                notify("error","Trường danh mục không được để trống")
+            }
+               
+            
+            }
+       
+           
+            
+    
 
     return (      
         <section className="bg-white py-20 lg:py-[120px] overflow-hidden relative z-10">
@@ -61,7 +79,8 @@ const UpdateCategory= () => {
                             <input
                                 type="text"
                                 placeholder="Tên danh mục"
-                                name="name"
+                                name="cateName"
+                                id="cateName"
                                 onChange={onHandleChange} 
                                 defaultValue={cate?.name}
                                 className="

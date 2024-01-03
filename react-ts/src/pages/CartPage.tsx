@@ -1,59 +1,138 @@
 import React, { useEffect, useState } from "react";
-import { ICard, IProduct } from "../models";
-import { number } from "joi";
+import { ICard, IProduct, OrderForm, OrderSchema, ProductColorForm } from "../models";
 import formatprice from "../sub";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { addOrder } from "../api/order";
+import notify from "../components/notify";
+import { AppDispatch, RootState } from "../storage";
+import { useDispatch, useSelector } from "react-redux";
+import { subtractionQuantityProducts } from "./slice/product.slice";
+import { subtractionProduct } from "../api/products";
+import { useNavigate } from "react-router-dom";
+import { addOrders } from "./slice/order.slice";
 interface Iprops{
   handleCartLenthg(value:number):void
 }
+
 const CartPage = ({handleCartLenthg}:Iprops) => {
-  const [products, setProducts] = useState<ICard[]>([]);
+  const { products, isLoading } = useSelector((state: RootState) => state.products)
+  const dispatch = useDispatch<AppDispatch>()
+  const [product, setproduct] = useState<ICard[]>([]);
   const [sum, setSum] = useState(0);
   const use_id = JSON.parse(localStorage.getItem("user")!);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<OrderForm>({
+    resolver: yupResolver(OrderSchema),
+   defaultValues:{
+    name: use_id.data.name,
+    email: use_id.data.email,
+    phonenumber: use_id.data.phonenumber,
+   }
+  });
   useEffect(() => {
-    setProducts(JSON.parse(localStorage.getItem(use_id.data._id)!));
+    setproduct(JSON.parse(localStorage.getItem(use_id.data.email)!));
   }, []);
   useEffect(() => {
     let sum = 0;
-    if (products != null) {
-      const temp = products.map((item) => {
+    if (product != null) {
+      const temp = product.map((item) => {
         return (sum += item.quantity * item.price);
       });
     }
     setSum(sum);
-  }, [products]);
+  }, [product]);
+const tesst = async ()=>{
+  product.map(async   item => {
+    let id= item._id
+    let v_index= item.versionIndex
+    let c_index= item.colorIndex
+    let quantity= item.quantity
+    return await subtractionProduct(id,v_index,c_index,quantity)
 
+ });
+
+}
+const navigate  = useNavigate()
+  const onsubmit = async   (data:OrderForm) => {
+    data.products = product 
+    data.products.map((item,index)=>{
+      item.version_index = product[index].versionIndex
+      item.color_index = product[index].colorIndex
+    })   
+    data.user_id = use_id.data._id
+    data.status = 0
+
+    let temp = 0
+    product.map(item=> {
+      temp+=Number(item.price)* Number(item.quantity)
+    })
+    data.total = temp
+    tesst()
+    console.log(data);
+    
+    try {
+      const dataz = await dispatch(addOrders(data)).unwrap()     
+      localStorage.removeItem(use_id.data.email)
+        
+          navigate("/orders")
+          notify('success','đặt hàng thành công') 
+    } catch (err) {
+      console.log(err);
+    }
+
+        
+        
+    }
   const plus = (id: string) => {
-    let temp: ICard[] = products.slice("");
+    let temp: ICard[] = product.slice("");
     const pr: ICard = temp.find((item) => item._id == id)!;
-    pr.quantity = Number(pr.quantity) + 1;
-    localStorage.setItem(use_id.data._id, JSON.stringify(temp));
-    setProducts(temp);
+     if(pr.quantity>=pr.maxQuantity){
+      notify("error","Số lượng trong kho không thể đáp ứng nhu cầu của bạn")
+    }
+    else{
+      pr.quantity = Number(pr.quantity) + 1;
+      localStorage.setItem(use_id.data.email, JSON.stringify(temp));
+      setproduct(temp);
+    }
+    
   };
 
+
   const Subtraction = (id: string) => {
-    let temp: ICard[] = products.slice("");
+    let temp: ICard[] = product.slice("");
     const pr: ICard = temp.find((item) => item._id == id)!;
+    console.log(pr);
+    
     if (pr.quantity <= 1) {
-      alert("Số lượng sản phẩm phải lớn hơn 0");
-    } else {
+      notify("error","Số lượng sản phẩm phải lớn hơn 0")
+    } 
+    else {
       pr.quantity = Number(pr.quantity) - 1;
 
-      localStorage.setItem(use_id.data._id, JSON.stringify(temp));
-      setProducts(temp);
+      localStorage.setItem(use_id.data.email, JSON.stringify(temp));
+      setproduct(temp);
     }
   };
   const remove = (id: string) => {
-    let temp: ICard[] = products.slice("");
+    let temp: ICard[] = product.slice("");
     const index = temp.findIndex((item) => item._id == id);
     temp.splice(index, 1);
-    localStorage.setItem(use_id.data._id, JSON.stringify(temp));
-    setProducts(temp);
+    localStorage.setItem(use_id.data.email, JSON.stringify(temp));
+    setproduct(temp);
     handleCartLenthg(temp.length)
   };
-  if (products != null) {
+  const toggleorder = ()=>{
+    const order = document.querySelector("#order");
+    order?.classList.toggle("hidden")
+  }
+  if (product != null) {
     return (
-      <div className=" ">
-        <div className="py-12">
+      <div className=" mt-[40px]  " >
+        <div className="py-12 z-1">
           <div className="max-w-md mx-auto bg-gray-100 shadow-lg rounded-lg  md:max-w-5xl">
             <div className="md:flex ">
               <div className="w-full p-4 px-5 py-5">
@@ -61,15 +140,16 @@ const CartPage = ({handleCartLenthg}:Iprops) => {
                   <div className="col-span-2 p-5">
                     <h1 className="text-xl font-medium ">Giỏ hàng</h1>
 
-                    {products.map((item) => {
+                    {product.map((item) => {
       
                       
                       return (
+                        <>
                         <div className="flex justify-between items-center mt-6 pt-6 flex-wrap">
                           <div className="flex  items-center">
                            <img className="w-[100px]" src={item.images?.[0]} alt="" />
 
-                            <div className="flex flex-col ml-3">
+                            <div className="flex flex-col ml-3 w-[150px]">
                               <span className="md:text-md font-medium ">
                                 {item.name} {item.version} {item.colorName}
                               </span>
@@ -142,6 +222,8 @@ const CartPage = ({handleCartLenthg}:Iprops) => {
                             </button>
                           </div>
                         </div>
+
+                        </>
                       );
                     })}
 
@@ -155,11 +237,13 @@ const CartPage = ({handleCartLenthg}:Iprops) => {
                           Tiếp tục mua hàng
                         </a>
                       </div>
-
+                    
                       <div className="flex justify-center items-end"></div>
+                      
                     </div>
+                    
                   </div>
-                  <div className=" p-5 bg-[#18181B] rounded overflow-visible">
+                  <div className=" p-5 bg-[#18181B] w- rounded overflow-visible">
                     <span className="text-[25px] font-medium text-gray-100 block pb-3">
                       Chi tiết giỏ hàng
                     </span>
@@ -182,7 +266,7 @@ const CartPage = ({handleCartLenthg}:Iprops) => {
                       />
                     </div>
 
-                    <button className="h-12 w-full bg-blue-500 rounded focus:outline-none text-white hover:bg-blue-600">
+                    <button onClick={toggleorder} type="button" className="h-12 w-full bg-blue-500 rounded focus:outline-none text-white hover:bg-blue-600">
                       Check Out
                     </button>
                   </div>
@@ -191,11 +275,57 @@ const CartPage = ({handleCartLenthg}:Iprops) => {
             </div>
           </div>
         </div>
-      </div>
+      
+      <div id="order" className="bg-white hidden  h-[80%] fixed right-[230px] rounded-lg shadow-lg z-20  w-[70%] top-[80px]">
+                    <button onClick={toggleorder} className="font-bold absolute right-10 top-5">x</button>
+     <h1 className=" text-[20px] font-bold text-center mb-[50px]">Thông tin đơn hàng</h1>
+<form onSubmit={handleSubmit(onsubmit)} className="px-[50px]">
+  <div className="relative z-0 w-full mb-6 group">
+      <input {...register("name")}  type="text"  className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+      <label className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Tên người nhận hàng</label>
+      <p className="text-red-700 text-[10px]">
+                    {errors.name && errors.name.message}
+                  </p>
+  </div>
+  <div className="relative z-0 w-full mb-6 group">
+      <input {...register("email")}  type="email"  className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+      <label  className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Email</label>
+      <p className="text-red-700 text-[10px]">
+                    {errors.email && errors.email.message}
+                  </p>
+  </div>
+  <div className="relative z-0 w-full mb-6 group">
+      <input {...register("phonenumber")}  type="text" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+      <label  className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Số điện thoại</label>
+      <p className="text-red-700 text-[10px]">
+                    {errors.phonenumber && errors.phonenumber.message}
+                  </p>
+  </div>
+  <div className="relative z-0 w-full mb-6 group">
+      <input {...register("address")} type="text"   className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"  required />
+      <label  className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Địa chỉ</label>
+      <p className="text-red-700 text-[10px]">
+                    {errors.address && errors.address.message}
+                  </p>
+  </div>
+  
+  <div className="relative  z-0 w-full mb-6 group">
+        <textarea {...register("note")} className="rounded-lg"  cols={125} rows={6} placeholder="Ghi chú"></textarea>
+        <p className="text-red-700 text-[10px]">
+                    {errors.note && errors.note.message}
+                  </p>
+    </div>
+  <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Mua hàng</button>
+</form>
+
+
+          </div>
+        </div>
+      
     );
   } else {
     return (
-      <div className="text-center">
+      <div className="text-center h-[190px] pt-[100px]">
         <h1 className="mt-[50px] font-bold">
           Không có sản phẩm trong giở hàng
         </h1>

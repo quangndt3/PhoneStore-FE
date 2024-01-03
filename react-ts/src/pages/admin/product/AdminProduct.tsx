@@ -1,28 +1,27 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IData, IProduct } from '../../../models'
-import   formatprice  from '../../../sub'
-import { check } from '../../../components/check'
+
 import { getAll, remove } from '../../../api/products'
 import ProductAmin from '../../../components/product_Admin'
+import notify from '../../../components/notify'
+import { useDispatch, useSelector } from 'react-redux'
+import { AppDispatch, RootState } from '../../../storage'
+import { fetchProducts, fetchProductsAll, removeProducts } from '../../slice/product.slice'
 const AdminProduct = () => {
 
-
-    const handleDeleteProduct = (id:string) => {
-      const confirm = window.confirm('Are you sure you want to delete this product')
+  const { products, isLoading } = useSelector((state: RootState) => state.products)
+  const dispatch = useDispatch<AppDispatch>()
+    const handleDeleteProduct = async (id:string) => {
+      const confirm = window.confirm('Bạn có chắc chắn muốn xoá sản phẩm này không ?')
       if(confirm){
-        remove(id).then(()=>{
-          alert("Xoá sản phẩm thành công")
-          getAll(skip,1).then(({data})=>{
-      
-            
-            setProducts(data)
-          })
-      }).catch(err=>{
-          alert(err.response.data.message)
-          console.log(err);
-          
-      })
+      try {
+        await dispatch(removeProducts(id!)).unwrap()
+        handleFetchProduct()
+        notify("success","Xoá sản phẩm thành công")
+      } catch (error) {
+        alert(error)
+      }
       }
 
       
@@ -30,19 +29,24 @@ const AdminProduct = () => {
   
     
 
-    const [products, setProducts] = useState<IData>();
+    // const [products, setProducts] = useState<IData>();
   const [skip, setSkip] = useState(0);
-
+  const handleFetchProduct = async () => {
+    try {
+      const temp = {
+        skip: skip,
+        limit: 5,
+      }
+      const data = await dispatch(fetchProductsAll(temp)).unwrap()      
+    } catch (err) {
+      console.log(err);
+    }
+  }
   useEffect(() => {
-    getAll(skip,1).then(({ data }) => {
-        
-      setProducts(data);
-
-        
-    });
-
-
+    handleFetchProduct()
   }, [skip]);
+
+  
 const getSkip=(skipValue:number):void=>{
   setSkip(skipValue)
 }
@@ -59,8 +63,8 @@ const getSkip=(skipValue:number):void=>{
   return (
 
 
-    <div className="mt-[145px] max-md:mt-[90px]">
-          <div className="my-[100px]">
+    <div className=" max-md:mt-[90px]">
+          <div className="my-[50px]">
    
           </div>
           <ProductAmin data={products!} setSkipCallBack={getSkip} deleteProduct={handleDeleteProduct}/>

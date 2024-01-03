@@ -3,6 +3,7 @@ import axios from "axios";
 import React, { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { signup } from "../../api/users";
+import notify from "../../components/notify";
 
 const Signup = () => {
   const [valueInput, setValueInput] = useState({});
@@ -54,7 +55,7 @@ const Signup = () => {
       .then(({ data }: any) => {
         localStorage.setItem("user", JSON.stringify(data));
         localStorage.setItem("acc", JSON.stringify(data.data));
-        alert("Thành công");
+        notify("success","Đăng ký thành công")
         navigate("/");
       })
       .catch((err: string) => {

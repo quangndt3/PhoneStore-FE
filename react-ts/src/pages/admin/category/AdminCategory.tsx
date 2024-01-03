@@ -1,41 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { check } from '../../../components/check';
-import { RemoveCategories, getAllCategories } from '../../../api/categories';
-interface category {
-    _id:string,
-    name: string,
-    createdAt: string,
-    updatedAt: string
-  }
+import notify from '../../../components/notify';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '../../../storage';
+import { fetchCategories, removeCategories } from '../../slice/categori.slice';
+
 const AdminCategory = () => {
-    
-    const [data, setData] = useState<category[]>([])
-    useEffect(() => {
-      getAllCategories().then(({data})=>{
-        setData(data)
-      })
-        
-      }, [])
       
+  const { categories, isLoading } = useSelector((state: RootState) => state.categories)
+  const dispatch = useDispatch<AppDispatch>()
+  const handleFetchCate = async () => {
+    try {
+      const data = await dispatch(fetchCategories()).unwrap()      
+    } catch (err) {
+      console.log(err);
+    }
+  }
+    useEffect(() => {
+      handleFetchCate()
+        
+      }, [])      
       const navigate = useNavigate();
       const onNavigate = (id:string) => {
         navigate(`/admin/category/${id}/update`)
       }
-      const handleRemoveCategory = (id:string) => {
+      const handleRemoveCategory = async (id:string) => {
         const confirm = window.confirm('Bạn có chắc chắn muốn xoá không ?')
         if(confirm){
-          RemoveCategories(id).then(()=>{
-            alert("Xoá danh mục thành công")
-            getAllCategories().then(({data})=>{
-              setData(data)
-            })
-          }).catch(err=>{
-            alert(err.response.data.message)
-          })
+        try {
+          await dispatch(removeCategories(id!)).unwrap()
+            notify("success","Xoá danh mục thành công")
+        } catch (error:any) {
+          alert(error.response.data.message)
         }
-
       }
+    }
 
       return(
         <div className="overflow-hidden rounded-lg border border-gray-200 shadow-md m-5 w-[1200px]">
@@ -52,7 +51,7 @@ const AdminCategory = () => {
           </thead>
           <tbody className="divide-y divide-gray-100 border-t border-gray-100">
   
-            {data.map(item => {
+            {categories?.map(item => {
               
               return (
                 <tr key={item._id} className="hover:bg-gray-50">

@@ -1,52 +1,49 @@
 import React, { createContext, useEffect, useState } from "react";
-import Product from "../components/product";
+import Product from "../components/paginate";
 import Slide from "../components/slide";
-import { ICategory, IData, IProduct } from "../models";
+import { ICategory, ICategoryPopulate, IData, IProduct } from "../models";
 import { getAll } from "../api/products";
-
+import ListProductSlide from "../components/listProductSlide";
+import { getAllCategories } from "../api/categories";
+import { AppDispatch, RootState } from "../storage";
+import { fetchCategories } from "./slice/categori.slice";
+import { useDispatch, useSelector } from 'react-redux'
 
 export const skipContext = createContext(2)
 const HomePages = () => {
-  const [products, setProducts] = useState<IData>();
-  const [categories, setCategories] = useState<ICategory[]>([]);
-  const [skip, setSkip] = useState(0);
-
-  useEffect(() => {
-    getAll(skip,5 ).then(({ data }) => {
-        
-      setProducts(data);
-
-        
-    });
-
-
-  }, [skip]);
-  useEffect(() => {
-    alert("admin account: tk: quangdt3@gmail.com - mk: 123456")
-  },[])
-  console.log('test');
   
-const getSkip=(skipValue:number):void=>{
-  setSkip(skipValue)
-}
+  const { categories, isLoading } = useSelector((state: RootState) => state.categories)
+  const dispatch = useDispatch<AppDispatch>()
 
-  const handleToggleFilter = ()=>{
-    const mobile_filter = document.querySelector(".mobile-filter")
-    const overlay = document.querySelector(".overlay")
-    mobile_filter!.classList.toggle("translate-x-[-100%]")
-    overlay!.classList.toggle("hidden")
- 
+  const handleFetchCate = async () => {
+    try {
+      const data = await dispatch(fetchCategories()).unwrap()      
+    } catch (err) {
+      console.log(err);
+    }
   }
-  
+  useEffect(() => {
+    handleFetchCate()
+  },[] );
+
+
   return (
 
 
     <div className="mt-[145px] max-md:mt-[90px]">
-          <div className="my-[100px]">
-          <Slide/>
-          </div>
-          <Product data={products!} setSkipCallBack={getSkip}/>
+          <div className="mt-[100px]">
 
+          </div>
+          {categories.map(category=>{
+            if(category.products.length>0){
+              return <>
+              <h1 className="ml-[160px] text-[#444444] text-[22px] font-bold my-[30px]">{category.name.toUpperCase()}</h1>
+          <ListProductSlide products={category.products}></ListProductSlide>
+              </>
+            }
+             
+          })}
+          
     </div>
 
   );

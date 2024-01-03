@@ -1,42 +1,47 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { IAddCategory, ICategory, IProductColor, ProductColorForm, ProductColorSchema } from '../../../models';
-import { check } from '../../../components/check';
-import { addCategory } from '../../../api/categories';
-import { addProductColor } from '../../../api/product_color';
+import { getOneProductColor, updateProductColor } from '../../../api/product_color';
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
 import notify from '../../../components/notify';
 
 
-const AddProductColor = () => {
-    const [valueInput, setValueInput] = useState<IProductColor>();
+const UpdateProductColor = () => {
+    const { id } = useParams()
 
-
-    
+    const getOne = async () => {
+        const { data } = await  getOneProductColor(id!);
+        data.data._id = undefined
+        data.data.createdAt = undefined
+        data.data.updatedAt = undefined
+        return data.data;
+      };
     const navigate = useNavigate();
-
+     
+    const onsubmit = (data:ProductColorForm) => {        
+        updateProductColor(data,id!).then((res) => {
+            notify("success", "Cập nhật màu thành công")
+            navigate('/admin/productColors')
+          })
+          .catch(errors=>{
+            console.log(data);
+            
+            console.log(errors);
+            alert(errors.message)
+          })
+      }
     const {
         register,
         handleSubmit,
         formState: { errors },
       } = useForm<ProductColorForm>({
         resolver: yupResolver(ProductColorSchema),
+        defaultValues: async () => {
+            return await getOne();
+          },
       });
-  
-      const onsubmit = (data:ProductColorForm) => {
-
-        
-        addProductColor(data).then((res) => {
-            notify("success", "Thêm màu thành công")
-            navigate('/admin/productColors')
-          })
-          .catch(errors=>{
-            console.log(errors);
-            
-            alert(errors.message)
-          })
-      }
+      
     return (      
         <section className="bg-white py-20 lg:py-[120px] overflow-hidden relative z-10">
         <div className="container">
@@ -47,11 +52,10 @@ const AddProductColor = () => {
                     <form onSubmit={handleSubmit(onsubmit)} >
                         <div className="mb-6">
                             <input
-                                   {...register("color")}
+                                {...register("color")}
                                 type="text"
                                 placeholder="Tên Màu sắc"
                                 name="color"
-
                                 className="
                                 w-full
                                 rounded
@@ -72,8 +76,8 @@ const AddProductColor = () => {
                             <input
                                 {...register("colorCode")}
                                 type="color"
-        
-                                id='color'
+                        id='coloCode'
+               
                                 className="
                                 w-full
                                 rounded
@@ -101,7 +105,7 @@ const AddProductColor = () => {
                                 hover:bg-opacity-90
                                 "
                                 >
-                            Thêm màu sắc
+                            Cập nhật màu sắc
                             </button>
                         </div>
                     </form>
@@ -114,4 +118,4 @@ const AddProductColor = () => {
     )
 }
 
-export default AddProductColor
+export default UpdateProductColor

@@ -1,67 +1,55 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IAddCategory, ICategory } from '../../../models';
+import { IAddCategory, ICategory, IProductColor, ProductColorForm, ProductColorSchema, ProductVersionForm, ProductVersionSchema } from '../../../models';
 import { check } from '../../../components/check';
 import { addCategory } from '../../../api/categories';
-import { ToastContainer } from 'react-toastify';
-import notify from '../../../components/notify';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../../storage';
-import { addCategories, fetchCategories } from '../../slice/categori.slice';
+import { addProductColor } from '../../../api/product_color';
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useForm } from "react-hook-form";
+import { addProductVersion } from '../../../api/product_version';
+import { toast } from 'react-toastify';
 
 
-
-const AddCategory = () => {
-    const [valueInput, setValueInput] = useState<IAddCategory>();
-
-    const { categories, isLoading } = useSelector((state: RootState) => state.categories)
-    const dispatch = useDispatch<AppDispatch>()
-    
+const AddProductVersion = () => {    
     const navigate = useNavigate();
-    const onHandleChange = (e:any) => {
-        e.preventDefault();
 
-        const value = e.target.value;
-        setValueInput({name: value })
-    }
-    const onHandleSubmit = async (e:React.FormEvent) => {
-        e.preventDefault();
-    const cateName = document.querySelector("#cateName") as HTMLInputElement
-    if(cateName.value !== ""){
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+      } = useForm<ProductVersionForm>({
+        resolver: yupResolver(ProductVersionSchema),
+      });
+  
+      const onsubmit = async (data:ProductVersionForm) => {
 
+        
+        addProductVersion(data).then((res) => {
+            alert("Thêm phiên bản thành công")
+            navigate('/admin/productVersions')
+          })
+          .catch(errors=>{            
+            console.log(errors)
+          })
 
-        try {
-            await dispatch(addCategories(valueInput!)).unwrap()
-            await dispatch(fetchCategories()).unwrap()
-            notify("success","Thêm danh mục thành công")
-           navigate('/admin/categories')
-        } catch (err:any) {
-            alert(err.response.data.message)
-        }
-    }
-    else{
-        notify("error","Trường danh mục không được để trống")
-    }
+          
        
-    
-    }
-
-
+      }
     return (      
         <section className="bg-white py-20 lg:py-[120px] overflow-hidden relative z-10">
-             
         <div className="container">
             <div className="flex flex-wrap lg:justify-between -mx-4">
 
                 <div className="w-[500px] ml-[350px] px-4">
                     <div className="bg-white relative rounded-lg p-8 sm:p-12 shadow-lg">
-                    <form onSubmit={onHandleSubmit}>
+                    <form onSubmit={handleSubmit(onsubmit)} >
                         <div className="mb-6">
                             <input
+                                   {...register("version")}
                                 type="text"
-                                placeholder="Tên danh mục"
-                                id="cateName"
-                                onChange={onHandleChange} 
+                                placeholder="Phiên bản"
+                                name="version"
+
                                 className="
                                 w-full
                                 rounded
@@ -74,6 +62,9 @@ const AddCategory = () => {
                                 focus:border-primary
                                 "
                                 />
+                                <p className="text-red-700 text-[10px]">
+                    {errors.version && errors.version.message}
+                  </p>
                         </div>
             
                         <div>
@@ -90,7 +81,7 @@ const AddCategory = () => {
                                 hover:bg-opacity-90
                                 "
                                 >
-                            Thêm danh mục
+                            Thêm phiên bản
                             </button>
                         </div>
                     </form>
@@ -103,4 +94,4 @@ const AddCategory = () => {
     )
 }
 
-export default AddCategory
+export default AddProductVersion

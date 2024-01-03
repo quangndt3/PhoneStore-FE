@@ -7,42 +7,43 @@ import { getAllCategories } from '../../../api/categories'
 import axios from 'axios'
 import { useForm } from "react-hook-form";
 import { yupResolver } from '@hookform/resolvers/yup'
-// import { updateProduct} from '../../api/product'
+import notify from '../../../components/notify'
+import { AppDispatch, RootState } from '../../../storage'
+import { useDispatch, useSelector } from 'react-redux'
+import { updateProducts } from '../../slice/product.slice'
+
 
 
 
 
 const UpdateProduct = () => {
-
+  const { products, isLoading } = useSelector((state: RootState) => state.products)
+  const dispatch = useDispatch<AppDispatch>()
     
     const { id } = useParams()
     const [sanpham, setProduct] = useState<IProduct>()
     const [category,setCategory] = useState<ICategory[]>()
     useEffect(() => {
          getOne(id!).then(({data})=>{
- 
           
-          for(let i=0;i<data.attributes.length;i++) {
-            for(let j=0;j<data.attributes[i].colors.length;j++) {
-              data.attributes[i].colors[j].versionName = data.attributes[i].version
-            }
-          }
             setProduct(data)
          }).catch(err=>{
             alert(err.reponse.data.message)
          })
-         getAllCategories().then(({data})=>{
+         getAllCategories().then((data)=>{
             setCategory(data)
          }).catch(err=>{
             alert(err.response.data.message)
          })
          
     },[])
-      
+
+    console.log(category);
     
+  
   const getOneProduct = async () => {
     const { data } = await getOne(id!);
-
+    data.categoryId = data.categoryId._id
     return data;
   };
     const navigate = useNavigate();
@@ -56,11 +57,17 @@ const UpdateProduct = () => {
             return await getOneProduct();
           },
       });
+
       
     const onsubmit = async (data:ProductForm) => {
+        
+        const cate_id = document.querySelector("#cate_id") as HTMLInputElement
+        data.categoryId = cate_id.value      
+        console.log(data);
+        
         const imgs = document.querySelectorAll('.img') as NodeListOf<HTMLInputElement>
         const images =[]
-    
+      
         
         for(let i=0; i<imgs.length; i++) {
             if(imgs[i].files!.length>0) {
@@ -80,20 +87,19 @@ const UpdateProduct = () => {
         const inputColor = document.querySelectorAll(".color") as NodeListOf<HTMLInputElement>
         const inputPrice = document.querySelectorAll(".price") as NodeListOf<HTMLInputElement>
         const inputQuantity = document.querySelectorAll(".quantity") as NodeListOf<HTMLInputElement>
-        const inputColorCode = document.querySelectorAll(".colorCode") as NodeListOf<HTMLInputElement>
+        const inputColor_id = document.querySelectorAll(".color_id") as NodeListOf<HTMLInputElement>
         const attributeArray = []
-        for(var i = 0; i < sanpham?.attributes.length; i++){
+        for(var i = 0; i < sanpham?.attributes.length!; i++){
           const attribute ={
-            version:sanpham?.attributes[i].version,
+            version_id:sanpham?.attributes[i].version_id._id,
             colors:[]
           }
           for(var j=0; j < inputColor.length; j++){
-            if(inputVersion[j].value === sanpham?.attributes[i].version){
+            if(inputVersion[j].value === sanpham?.attributes[i].version_id.version){
               const color={
-                colorName:inputColor[j].value,
+                color_id:inputColor_id[j].value,
                 price: inputPrice[j].value,
-                quantity: inputQuantity[j].value,   
-                colorCode: inputColorCode[j].value,              
+                quantity: inputQuantity[j].value,               
               }
               attribute.colors.push(color)
             }
@@ -102,19 +108,20 @@ const UpdateProduct = () => {
         }
         data.attributes = []
         data.attributes=attributeArray
-        const cate_id = document.querySelector("#cate_id") as HTMLInputElement
-        data.categoryId = cate_id.value
+
         console.log(data);
         
-         updateProduct(data,id!).then(() => {
-
-            
-            alert("Updated product complete!")
-            // navigate('/admin/products');
-         }).catch(errors=>{
-            console.log(errors);
-            
-         })
+        const temp={
+          newProduct: data,
+          id: id!
+        }
+        try {
+          dispatch(updateProducts(temp!)).unwrap()
+          notify("success","Cập nhật thành công")
+            navigate('/admin/products');
+        } catch (error) {
+          
+        }
     }   
     
     const upload = async (files: any) => {
@@ -179,15 +186,9 @@ const UpdateProduct = () => {
                         <p className="text-red-700 text-[10px]">
                   {errors.name && errors.name.message}
                 </p>
-                <p className="text-red-700 text-[10px]">
-                  {errors.discount && errors.discount.message}
-                </p>
-                <p className="text-red-700 text-[10px]">
-                  {errors.original_price && errors.original_price.message}
-                </p>
-                <p className="text-red-700 text-[10px]">
-                  {errors.description && errors.description.message}
-                </p>
+               
+ 
+            
                 <p className="text-red-700 text-[10px]">
                   {errors.categoryId && errors.categoryId.message}
                 </p>
@@ -195,7 +196,7 @@ const UpdateProduct = () => {
                         <div className="mb-6">
                             <input
                                         {...register("discount")}
-                                type="text"
+                                type="number"
                                 name="discount"
                                 placeholder="Giảm giá"
              
@@ -212,16 +213,17 @@ const UpdateProduct = () => {
                                 focus:border-primary
                                 "
                                 />
+                                 <p className="text-red-700 text-[10px]">
+                  {errors.discount && errors.discount.message}
+                </p>
                         </div>
                         <h2 className='mb-4'>Giá sản phẩm</h2>
                         <div className="mb-6">
                             <input
-                                        {...register("original_price")}
-                                type="text"
-                                name="price"
+                            
+                                type="number"
+                                {...register("original_price")}
                                 placeholder="Giá"
-             
-                                 
                                 className="
                                 w-full
                                 rounded
@@ -234,6 +236,9 @@ const UpdateProduct = () => {
                                 focus:border-primary
                                 "
                                 />
+                     <p className="text-red-700 text-[10px]">
+                  {errors.original_price && errors.original_price.message}
+                </p>
                         </div>
 
                         <h2 className='mb-4'>Ảnh sản phẩm</h2>
@@ -263,9 +268,9 @@ const UpdateProduct = () => {
                         <div className='font-bold'>Giá</div>
                         <div className='font-bold'>Số lượng</div>
                       </div>
-                 {sanpham?.attributes.map((item)=>{
+                 {sanpham?.attributes.map(item=>{
                   return item.colors.map((color)=>{
-                   
+
                     
                     return<>
                     <div className='pb-5 border-b-[1px] border-black mb-3'>
@@ -275,9 +280,9 @@ const UpdateProduct = () => {
                                     
                                     type="hidden"
                                     disabled
-                                   value={color.colorCode}
+                                   value={color.color_id._id}
                                     className="
-                                    colorCode
+                                    color_id
                                     "
                                     />
                       <input
@@ -285,7 +290,7 @@ const UpdateProduct = () => {
                                     type="text"
                                     placeholder="Phiên bản"
                                     disabled
-                                   value={color.versionName}
+                                   value={item.version_id.version}
                                     className="
                                     version
                                     "
@@ -295,8 +300,8 @@ const UpdateProduct = () => {
                                     type="text"
                                    
                                     placeholder="Màu"
-                                    
-                                    value={color.colorName}
+                                    disabled
+                                    value={color.color_id.color}
                                     name="color"
                                     className="
                                     color
@@ -337,7 +342,7 @@ const UpdateProduct = () => {
                         
                         <div className="mb-6">
                         <h2 className='mb-4'>Danh mục sản phẩm</h2>
-                            <select      id="cate_id" className=' w-full
+                            <select {...register("categoryId")}   id="cate_id" className=' w-full
                                 rounded
                                 py-3
                                 px-[14px]
@@ -346,20 +351,11 @@ const UpdateProduct = () => {
                                 outline-none
                                 focus-visible:shadow-none
                                 focus:border-primary'>
-                                
-                            {category!?.map(item=>{
-                            
-                                if(item._id == sanpham?.categoryId._id){
-                                
+                            {category!?.map(item=>{                     
                                   return (
-                                    <option selected value={item._id} >{item.name}</option>
-                                  )
-                                }else{
-                                  return(
-                                    <option  value={item._id} >{item.name} </option>
-                                  )
-                                }  
-                            })}
+                                    <option value={item._id} >{item.name}</option>
+                                  )           
+                           })}
                             </select>
                         </div>
                         <h2 className='mb-4'>Miêu tả</h2>
@@ -384,10 +380,14 @@ const UpdateProduct = () => {
                                 focus:border-primary
                                 "
                                 ></textarea>
+                                    <p className="text-red-700 text-[10px]">
+                  {errors.description && errors.description.message}
+                </p>
                         </div>
                         <div>
                             <button
-                                type="submit"
+                            
+                            type='submit'
                                 className="
                                 w-full
 

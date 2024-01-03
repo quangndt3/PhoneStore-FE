@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { IData, IProduct } from "../models";
+import { IAttributeForm, IData, IProduct } from "../models";
 import formatprice from "../sub";
 import { useContext, useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
@@ -32,12 +32,33 @@ function Items({ currentItems,deleteProduct }: any) {
                 <img className="w-[200px]" src={item.images[0]} alt="" />
               </span>
             </td>
-            <td className="px-6 py-4">
-              <span>{formatprice(item.original_price)}</span>
+            <td className="px-6 pr-[20px] py-4 ">
+                {item.attributes.map(attribute=>{
+                              let discount = 100 - item!?.discount;
+                              discount = Number("0" + "." + discount);
+                
+                return(
+                 <>
+                 <div className="w-auto flex justify-between mt-[10px]">
+                 <span className="my-auto min-w-[40px] ">{attribute.version_id?.version}:  </span>
+              <div className="flex flex-col pl-[15px] ">
+                 {attribute.colors.map(color=>{
+                  
+                  return<>
+               
+                  <span>{color?.color_id?.color}: {formatprice(Math.ceil(Number((item.original_price+color.price))*discount))}</span>
+                  </>
+                 })}
+                 </div>
+                 </div>
+
+                  </>
+                )
+              })}
             </td>
             
-            <td className="px-6 py-4 ">
-              <span className="w-[10px]" >{item.description}</span>
+            <td className="px-6 py-4 text-center ml-[10px]">
+              <span className="w-[10px]" >{item.discount}%</span>
             </td>
             <td className="px-6 py-4">
               {item.attributes.map(item=>{
@@ -46,13 +67,13 @@ function Items({ currentItems,deleteProduct }: any) {
                 return(
                  <>
                  <div className="w-[100px] flex justify-between mt-[10px]">
-                 <span className="my-auto min-w-[40px] ">{item.version}:  </span>
+                 <span className="my-auto min-w-[40px] ">{item.version_id?.version}:  </span>
               <div className="flex flex-col pl-[15px] ">
                  {item.colors.map(item=>{
                   
                   return<>
                
-                  <span>{item.colorName}:{item.quantity}</span>
+                  <span>{item?.color_id?.color}:{item.quantity}</span>
                   </>
                  })}
                  </div>
@@ -89,7 +110,7 @@ const ProductAmin = (props: Props) => {
 
   const [itemOffset, setItemOffset] = useState(0);
 
-  const itemsPerPage = 1;
+  const itemsPerPage = 5;
   // Simulate fetching items from another resources.
   // (This could be items from props; or items loaded in a local state
   // from an API endpoint with useEffect and useState)
@@ -128,7 +149,7 @@ const ProductAmin = (props: Props) => {
                 Giá
               </th>
               <th scope="col" className="px-6 py-4 font-medium text-gray-900">
-                Miêu tả
+                Giảm giá
               </th>
               <th scope="col" className="px-6 py-4 font-medium text-gray-900">
                 Số lượng
